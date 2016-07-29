@@ -1,5 +1,17 @@
 // Create by Jean Garcia
 
+var x1 = [];
+var y1 = [];
+var y2 = [];
+var y3 = [];
+
+for(var i = 0; i < 256; i++){
+	x1.push(i);
+	y1.push(0); y2.push(0);y3.push(0);
+}
+
+var hist = document.getElementById("Hist");
+
 // Cuando el usuario escoge un archivo, se llama a la funcion handleFiles.
 var inputElement = document.getElementById("input");
 inputElement.addEventListener("change", handleFiles, false);
@@ -33,6 +45,7 @@ inputElement.addEventListener("click", transform , false);
                 getBMP(buffer);
                 var imageData = convertToImageData();
                 ctx1.putImageData(imageData, 0, 0);
+    	            fillHist();
             }
 //  ------------------------------------------------------------------------------
             function getBMP(buffer) { 
@@ -293,6 +306,7 @@ inputElement.addEventListener("click", transform , false);
 
                 var imageData = convertToImageData(); 
                 ctx1.putImageData(imageData, 0, 0);
+                        fillHist();
             }
 //  ------------------------------------------------------------------------------
             function negative () {
@@ -490,4 +504,36 @@ inputElement.addEventListener("click", transform , false);
                  mirrorh(); // esto es debido a que la data que teniamos estaba volteada.
                 resizeCanvas(bitmap.infoheader.biWidth,bitmap.infoheader.biHeight); 
             }
+            
+            function fillHist(){			
+		var trace1 ={
+			x: x1,
+			y: y1,
+			type: 'scatter',
+			line: {
+				color: 'rgb(0,0,255)'
+			}
+		};
+		
+		var trace2 ={
+			x: x1,
+			y: y2,
+			type: 'scatter',
+			line: {
+			            color: 'rgb(0,255,0)'
+			}
+		};
+		
+		var trace3 ={
+			x: x1,
+			y: y3,
+			type: 'scatter',
+			line: {
+				color: 'rgb(255,0,0)'
+			}
+		};
+		
+		var data = [trace1, trace2, trace3];
+		Plotly.newPlot(hist, data);
+	}
 
