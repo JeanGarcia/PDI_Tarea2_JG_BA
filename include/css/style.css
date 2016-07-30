@@ -1,0 +1,68 @@
+
+body {
+	background-color: #E6E6FA;
+}
+
+hr {
+  border-top: 1px solid #cfcfe1;
+}
+
+.table > thead > tr > th,
+.table > tbody > tr > th,
+.table > tfoot > tr > th,
+.table > thead > tr > td,
+.table > tbody > tr > td,
+.table > tfoot > tr > td {
+  border-top: 1px solid #cfcfe1;
+}
+
+.table > thead > tr > th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #cfcfe1;
+}
+
+.table > tbody + tbody {
+  border-top: 2px solid #cfcfe1;
+}
+
+.table-bordered {
+  border: 1px solid #cfcfe1;
+}
+
+.table-bordered > thead > tr > th,
+.table-bordered > tbody > tr > th,
+.table-bordered > tfoot > tr > th,
+.table-bordered > thead > tr > td,
+.table-bordered > tbody > tr > td,
+.table-bordered > tfoot > tr > td {
+  border: 1px solid #cfcfe1;
+}
+.picture {
+  overflow-y: scroll;
+  height: 500px;
+  width: 91.5%;
+  position: absolute;
+  border-style: solid;
+  border-width: 3px;
+  border-color: #cfcfe1;
+}
+
+.floates {
+   float:left;
+   margin-right: 5px;
+}
+
+.floates2 {
+   float:right;
+   margin-right: 5px;
+}
+
+.click {
+	cursor: pointer;
+}
+
+#separate {
+	background-color: #E6E6FA;
+	width: 2px;
+	height: 30px;
+}
