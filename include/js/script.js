@@ -26,6 +26,7 @@ var ctx1 = canvas1.getContext('2d');
 canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
 var bitmap = {}; // los datos de la imagen.
+var zoom = 0;
 
 // Controla cuando el usuario desea aplicar una transformacion
 // var inputElement = document.getElementById("negative");
@@ -50,7 +51,7 @@ var bitmap = {}; // los datos de la imagen.
                 fillHist();
             }
 //  ------------------------------------------------------------------------------
-            function getBMP(buffer) { 
+            function getBMP(buffer) {
             // se obtiene el mapa de bits de la imagen .
                 var datav = new DataView(buffer);
                 var npadding, resto, cont=0, cont2=0;
@@ -80,6 +81,10 @@ var bitmap = {}; // los datos de la imagen.
 
                 bitmap.palette = new Uint8Array(buffer,(bitmap.fileheader.bfOffBits-(NumbClr*4)), NumbClr*4);
 
+                bitmap.zoom = {}; // datos para controlar el ZOOM
+                zoom = 0;
+                
+
                 if (bitmap.infoheader.biBitCount == 24) { // EN 24 BITS - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                     cont=0, cont2=0;
                     npadding = (bitmap.infoheader.biWidth*3) % 4;
@@ -103,7 +108,8 @@ var bitmap = {}; // los datos de la imagen.
                             cont2 = cont2 + resto;
                         }
                     } else {
-                        bitmap.pixels = new Uint8Array(buffer, start); // SIN PADDING!!!.
+                        bitmap.pixels = new Uint8Array(buffer, start);
+                        save = Array.from(bitmap.pixels); // SIN PADDING!!!.
                     }
 
                 } else if (bitmap.infoheader.biBitCount == 8) { // EN 8 BITS  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -218,14 +224,21 @@ var bitmap = {}; // los datos de la imagen.
                 
             }
 //  ------------------------------------------------------------------------------
-            function convertToImageData() { 
+            function convertToImageData() {
             // el mapa de bit se convierte en imagen.
-                
-                var Width = bitmap.infoheader.biWidth;
-                var Height = bitmap.infoheader.biHeight;
-                var imageData = ctx.createImageData(Width, Height);
-                var data = imageData.data;
-                var bmpdata = bitmap.pixels;
+                if(zoom == 0) { // NO HAY ZOOM
+                    var Width = bitmap.infoheader.biWidth;
+                    var Height = bitmap.infoheader.biHeight;
+                    var imageData = ctx.createImageData(Width, Height);
+                    var data = imageData.data;
+                    var bmpdata = save;
+                } else { // HAY ZOOM
+                    var Width = bitmap.zoom.width;
+                    var Height = bitmap.zoom.height;
+                    var imageData = ctx.createImageData(Width, Height);
+                    var data = imageData.data;
+                    var bmpdata = bitmap.zoom.pixels;
+                }
                 var palette = bitmap.palette;
                 
                                 resetH();
@@ -233,6 +246,7 @@ var bitmap = {}; // los datos de la imagen.
 
                 if(bitmap.infoheader.biBitCount == 24) {
                     // se reorganizan los pixeles para poderlos meter en la estructura imageData que puede ser usada por el canvas.
+
                     for (var y = 0; y < Height; ++y) { 
                         for (var x = 0; x < Width; ++x) {
 
@@ -242,10 +256,18 @@ var bitmap = {}; // los datos de la imagen.
                             data[index1 + 1] = bmpdata[index2 + 1];
                             data[index1 + 2] = bmpdata[index2];
                             data[index1 + 3] = 255;
-
-                            b[bmpdata[index2]]++; g[bmpdata[index2 + 1]]++; r[bmpdata[index2 + 2]]++;
                         }
                     }
+
+                        for (var y = 0; y < bitmap.infoheader.biHeight; ++y) {   // llenar los valores del histograma
+                            for (var x = 0; x < bitmap.infoheader.biWidth; ++x) {
+
+                                var index1 = (x + bitmap.infoheader.biWidth * (bitmap.infoheader.biHeight - y)) * 4;
+                                var index2 = x * 3 + (bitmap.infoheader.biWidth*3) * y;
+
+                                 b[bitmap.pixels[index2]]++; g[bitmap.pixels[index2 + 1]]++; r[bitmap.pixels[index2 + 2]]++;
+                            }
+                        }
 
                 } else if (bitmap.infoheader.biBitCount == 8) {
                     // se recorre el arreglo de indices reemplazando los indices por el color indexado en la paleta y almacenandolo en la estructura imageData que puede ser usada por el canvas.
@@ -291,7 +313,7 @@ var bitmap = {}; // los datos de la imagen.
 
                 return imageData;
             }
-            
+//  ------------------------------------------------------------------------------
             function ep4to24(B, i, j ,w){
                 var mask = 240;
 
@@ -302,7 +324,7 @@ var bitmap = {}; // los datos de la imagen.
                     bitmap.pixels[((i*w+j)*2+l)*3+2] = bitmap.palette[index*4+2];
                 }
             }
-            
+//  ------------------------------------------------------------------------------
             function ep1to24(B, i, j, w){
                 var mask = 128;
                 var l = 0;
@@ -315,7 +337,7 @@ var bitmap = {}; // los datos de la imagen.
                     l++;
                 }
             }
-            
+//  ------------------------------------------------------------------------------
             function p4to24(B, i, act, topp, w){
                 var mask = 240;
                 
@@ -328,7 +350,7 @@ var bitmap = {}; // los datos de la imagen.
                 }
                 return act;
             }
-            
+//  ------------------------------------------------------------------------------
             function p1to24(B, i, act, topp, w){
                 var masks = 128;
                 var l = 0;
@@ -392,30 +414,6 @@ var bitmap = {}; // los datos de la imagen.
 
                 return aux;
             }
-//  ------------------------------------------------------------------------------
-            // function transform() {
-            // // Se elige la funcion de transformacion a usar, segun la escogida por el usuario.
-            //     var option = document.getElementById("selection").value;
-
-            //     if(option=="negativo"){
-            //         negative();
-            //     } else if (option=="rotacw") {
-            //         rotatecw();
-            //     }else if (option=="rotaccw") {
-            //         rotatecw();
-            //         mirrorh();
-            //         mirrorv();
-            //     }else if (option=="espejoh") {
-            //         mirrorh();
-            //     }else if (option=="espejov") {
-            //         mirrorv();
-            //     }else if(option=="Equal")
-            //         equal();
-
-            //     var imageData = convertToImageData(); 
-            //     ctx1.putImageData(imageData, 0, 0);
-            //     fillHist();
-            // }
 //  ------------------------------------------------------------------------------
             function negative () {
             // Se transforman todos los colores a su respectivo negativo.
@@ -561,27 +559,49 @@ var bitmap = {}; // los datos de la imagen.
 //  ------------------------------------------------------------------------------
             function rotatecw() {
             // Se rota en sentido a las agujas del reloj para 24,8,4 y 1 bit.
+                var angle = $("#angle").val();
                 var Height = bitmap.infoheader.biHeight;
                 var Width = bitmap.infoheader.biWidth;
 
+                var cosoy =  Height/2 ;
+                var cosox =  Width/2 ;
+
+                if(!(angle>0 && angle<361)) // evita que el usuario introduzca numeros o valores incorrectos.
+                    angle = 90;
+
+                var radian = Math.PI * angle / 180.0; // convierte los grados a radianes
+                var cosB =  Math.cos(radian);
+                var sinB =  Math.sin(radian);
+
                 if(bitmap.infoheader.biBitCount == 24) {
 
-                    var aux = bitmap.pixels.slice();
-                    var cont = 0;
+                    // bitmap.infoheader.biHeight = Math.floor(Math.sqrt(Math.pow(bitmap.infoheader.biHeight,2) + Math.pow(bitmap.infoheader.biWidth,2)));
+                    // bitmap.infoheader.biWidth = bitmap.infoheader.biHeight;
 
-                    for (var y = 0; y < Width; ++y) { 
-                        for (var x = 0; x < Height; ++x) {
+                    console.log(bitmap.infoheader.biHeight);
+                    var aux = new Array (bitmap.infoheader.biHeight * bitmap.infoheader.biWidth * 3);
 
-                            var index1 = y * 3 + (Width * 3) * x;
+                    for (var y = 0; y < Height; ++y) { 
+                        for (var x = 0; x < Width; ++x) {
 
-                            aux[cont] = bitmap.pixels[index1];  // B
-                            aux[cont + 1] = bitmap.pixels[index1 + 1]; // G
-                            aux[cont + 2] = bitmap.pixels[index1 + 2]; // R
-                            cont = cont + 3;
+                            var xnew =  Math.ceil( (x - cosox) * cosB + (y - cosoy) * sinB + cosox);
+                            var ynew =  Math.ceil( -(x - cosox) * sinB + (y - cosoy) * cosB + cosoy);
+
+                            var index1 = x * 3 + (Width*3) * y;
+                            var index2 = xnew  * 3 + (Width*3) * ynew;
+
+                            aux[index2] = save[index1];  // B
+                            aux[index2 + 1] = save[index1 + 1]; // G
+                            aux[index2 + 2] = save[index1 + 2]; // R
 
                         }
                     }
-                    bitmap.pixels = aux;
+
+                    console.log(save);
+                    //save.length = bitmap.infoheader.biHeight * bitmap.infoheader.biWidth * 3;
+                    console.log(save);
+                    save = aux;
+
 
                 } else if (bitmap.infoheader.biBitCount == 8) {
 
@@ -619,10 +639,8 @@ var bitmap = {}; // los datos de la imagen.
 
                 // se actualizan los valores.
 
-                bitmap.infoheader.biHeight = Width;
-                bitmap.infoheader.biWidth =  Height;
 
-                mirrorh(); // esto es debido a que la data que teniamos estaba volteada.
+                //mirrorh(); // esto es debido a que la data que teniamos estaba volteada.
                 resizeCanvas(bitmap.infoheader.biWidth,bitmap.infoheader.biHeight); 
 
                 var imageData = convertToImageData(); 
@@ -656,7 +674,7 @@ var bitmap = {}; // los datos de la imagen.
 
                 
             }
-            
+//  ------------------------------------------------------------------------------
             function fillHist(){
             
                 var trace1 ={
@@ -689,14 +707,14 @@ var bitmap = {}; // los datos de la imagen.
                 var data = [trace1, trace2, trace3];
                 Plotly.newPlot(hist, data);
             }
-            
+//  ------------------------------------------------------------------------------
             function resetH(){
                 for(var x = 0; x < 256; x++){
                     b[x] = 0; g[x] = 0; r[x] = 0;
                 }
                     
             }
-
+//  ------------------------------------------------------------------------------
             function filldata(){
                 $("#DataD").text(" Width: " + bitmap.infoheader.biWidth+"px" +  "\n Height: " + bitmap.infoheader.biHeight+"px");
                 $("#DataP").text(bitmap.infoheader.biBitCount);
@@ -711,4 +729,219 @@ var bitmap = {}; // los datos de la imagen.
                     $("#DataM").text(((bitmap.infoheader.biWidth * bitmap.infoheader.biHeight/8) + 54 + (bitmap.infoheader.biClrUsed * 4) )/1000000 );
 
                 $("#DataN").text(bitmap.infoheader.biClrUsed);
+            }
+//  ------------------------------------------------------------------------------
+            function scaleNN() {
+
+                var oheight = bitmap.infoheader.biHeight;
+                var owidth = bitmap.infoheader.biWidth;
+                var nheight = $("#Sheight").val();
+                var nwidth = $("#Swidth").val();
+
+                if (nheight == 0 || nwidth == 0) {
+                    alert("no puede escalar a cero, introduzca otro valor");
+                    return 0;
+                }
+
+                var aux = new Array (nheight * nwidth * 3);
+
+                var x_ratio = owidth/nwidth;
+                var y_ratio = oheight/nheight;
+                var px, py;
+
+                for(var i=0; i<nheight; i++) {
+                    for(var j=0; j<nwidth; j++){
+
+                        px = Math.floor(j*x_ratio);
+                        py = Math.floor(i*y_ratio);
+
+                        aux[(i*nwidth*3)+j*3] = save[(py*owidth*3)+px*3]; 
+                        aux[(i*nwidth*3)+ 3*j + 1] = save[(py*owidth*3)+ 3*px + 1]; 
+                        aux[(i*nwidth*3)+ 3*j + 2] = save[(py*owidth*3)+ 3*px + 2]; 
+
+                    }
+                }
+
+                save.length = aux.length;
+                save = aux;
+
+                bitmap.infoheader.biWidth = nwidth;
+                bitmap.infoheader.biHeight = nheight; 
+
+                if(zoom == 0) {
+
+                    resizeCanvas(bitmap.infoheader.biWidth,bitmap.infoheader.biHeight); 
+                    var imageData = convertToImageData(); 
+                    ctx1.putImageData(imageData, 0, 0);
+                    fillHist(); 
+
+                } else {
+                   if($('#bilinear:checked').val()=='billie'){scaleB();}else{ scaleNN();}
+                }
+
+            }
+//  ------------------------------------------------------------------------------
+            function scaleB(){
+
+                var oheight = bitmap.infoheader.biHeight;
+                var owidth = bitmap.infoheader.biWidth;
+                var nheight = $("#Sheight").val();
+                var nwidth = $("#Swidth").val();
+
+                if (nheight == 0 || nwidth == 0) {
+                    alert("no puede escalar a cero, introduzca otro valor");
+                    return 0;
+                }
+
+                var x, y, indexa, indexb, indexc, indexd, x_diff, y_diff, offset=0;
+                var x_ratio = (owidth-1)/nwidth;
+                var y_ratio = (oheight-1)/nheight; 
+
+                var aux = new Array (nheight * nwidth * 3);
+
+                for(var i=0; i<nheight; i++){
+                    for(var j=0; j<nwidth; j++){
+
+                        x = parseInt(x_ratio * j);
+                        y = parseInt(y_ratio * i);
+                        x_diff = (x_ratio * j) - x;
+                        y_diff = (y_ratio * i) - y;
+
+                        indexa = (y * owidth * 3 + x * 3);
+                        indexb = (indexa + 3);
+                        indexc = (indexa + owidth * 3);
+                        indexd = (indexc + 3);
+
+                        // Y = A(1-w)(1-h) + B(w)(1-h) + C(h)(1-w) + D(wh)
+                        aux[offset] = save[indexa]*(1-x_diff)*(1-y_diff) + save[indexb]*(x_diff)*(1-y_diff) + save[indexc]*(y_diff)*(1-x_diff) + save[indexd]*(x_diff*y_diff);
+
+                        aux[offset+1] = save[indexa+1]*(1-x_diff)*(1-y_diff) + save[indexb+1]*(x_diff)*(1-y_diff) + save[indexc+1]*(y_diff)*(1-x_diff) + save[indexd+1]*(x_diff*y_diff);
+
+                        aux[offset+2] = save[indexa+2]*(1-x_diff)*(1-y_diff) + save[indexb+2]*(x_diff)*(1-y_diff) + save[indexc+2]*(y_diff)*(1-x_diff) + save[indexd+2]*(x_diff*y_diff);
+
+                        offset = offset + 3;
+                    }
+                }
+
+                save.length = aux.length;
+                save = aux;
+
+                bitmap.infoheader.biWidth = nwidth;
+                bitmap.infoheader.biHeight = nheight; 
+
+                if (zoom == 0) {
+                    resizeCanvas(bitmap.infoheader.biWidth,bitmap.infoheader.biHeight); 
+                    var imageData = convertToImageData(); 
+                    ctx1.putImageData(imageData, 0, 0);
+                    fillHist(); 
+
+                } else {
+                    if($('#bilinear:checked').val()=='billie'){scaleB();}else{ scaleNN();}
+                }
+
+
+            }
+//  ------------------------------------------------------------------------------
+            function zoomNN (op) {
+
+                var oheight = bitmap.infoheader.biHeight;
+                var owidth = bitmap.infoheader.biWidth;
+
+                if(op == 1){ // Se desea un Zoom In
+                    zoom ++ ;
+                } else if (op == 2) { // Se desea un Zoom Out
+                    if(zoom == -3){
+                        alert("no puedes reducir al 0%, si quieres apartar esta imagen de tu vista prueba escogiendo otra.");
+                        return 0 
+                    }
+                    zoom --;
+                } 
+
+                var nheight = Math.floor(parseInt(oheight) + parseInt(oheight * 0.25  * zoom));
+                var nwidth = Math.floor(parseInt(owidth) + parseInt(owidth * 0.25  * zoom));
+
+                bitmap.zoom.pixels = new Array (nheight * nwidth * 3);
+
+                var x_ratio = owidth/nwidth;
+                var y_ratio = oheight/nheight;
+                var px, py;
+
+                for(var i=0; i<nheight; i++) {
+                    for(var j=0; j<nwidth; j++){
+
+                        px = Math.floor(j*x_ratio);
+                        py = Math.floor(i*y_ratio);
+
+                        bitmap.zoom.pixels[(i*nwidth*3)+j*3] = save[(py*owidth*3)+px*3]; 
+                        bitmap.zoom.pixels[(i*nwidth*3)+ 3*j + 1] = save[(py*owidth*3)+ 3*px + 1]; 
+                        bitmap.zoom.pixels[(i*nwidth*3)+ 3*j + 2] = save[(py*owidth*3)+ 3*px + 2]; 
+
+                    }
+                }
+
+                bitmap.zoom.width = nwidth;
+                bitmap.zoom.height = nheight; 
+                resizeCanvas(bitmap.zoom.width,bitmap.zoom.height); 
+
+                var imageData = convertToImageData(); 
+                ctx1.putImageData(imageData, 0, 0);
+                
+            }
+//  ------------------------------------------------------------------------------
+            function zoomB(op){
+
+                var oheight = bitmap.infoheader.biHeight;
+                var owidth = bitmap.infoheader.biWidth;
+
+                if(op == 1){ // Se desea un Zoom In
+                    zoom ++ ;
+                } else if (op == 2) { // Se desea un Zoom Out
+                    if(zoom == -3){
+                        alert("no puedes reducir al 0%, si quieres apartar esta imagen de tu vista prueba escogiendo otra.");
+                        return 0 
+                    }
+                    zoom --;
+                } 
+
+                var nheight = Math.floor(parseInt(oheight) + parseInt(oheight * 0.25  * zoom));
+                var nwidth = Math.floor(parseInt(owidth) + parseInt(owidth * 0.25  * zoom));
+
+                bitmap.zoom.pixels = new Array (nheight * nwidth * 3);
+
+                var x, y, indexa, indexb, indexc, indexd, x_diff, y_diff, offset=0;
+                var x_ratio = (owidth-1)/nwidth;
+                var y_ratio = (oheight-1)/nheight; 
+
+                for(var i=0; i<nheight; i++) {
+                    for(var j=0; j<nwidth; j++){
+
+                        x = parseInt(x_ratio * j);
+                        y = parseInt(y_ratio * i);
+                        x_diff = (x_ratio * j) - x;
+                        y_diff = (y_ratio * i) - y;
+
+                        indexa = (y * owidth * 3 + x * 3);
+                        indexb = (indexa + 3);
+                        indexc = (indexa + owidth * 3);
+                        indexd = (indexc + 3);
+
+                        // Y = A(1-w)(1-h) + B(w)(1-h) + C(h)(1-w) + D(wh)
+                        bitmap.zoom.pixels[offset] = save[indexa]*(1-x_diff)*(1-y_diff) + save[indexb]*(x_diff)*(1-y_diff) + save[indexc]*(y_diff)*(1-x_diff) + save[indexd]*(x_diff*y_diff);
+
+                        bitmap.zoom.pixels[offset+1] = save[indexa+1]*(1-x_diff)*(1-y_diff) + save[indexb+1]*(x_diff)*(1-y_diff) + save[indexc+1]*(y_diff)*(1-x_diff) + save[indexd+1]*(x_diff*y_diff);
+
+                        bitmap.zoom.pixels[offset+2] = save[indexa+2]*(1-x_diff)*(1-y_diff) + save[indexb+2]*(x_diff)*(1-y_diff) + save[indexc+2]*(y_diff)*(1-x_diff) + save[indexd+2]*(x_diff*y_diff);
+
+                        offset = offset + 3;
+
+                    }
+                }
+
+                bitmap.zoom.width = nwidth;
+                bitmap.zoom.height = nheight; 
+                resizeCanvas(bitmap.zoom.width,bitmap.zoom.height); 
+
+                var imageData = convertToImageData(); 
+                ctx1.putImageData(imageData, 0, 0);
+
             }
