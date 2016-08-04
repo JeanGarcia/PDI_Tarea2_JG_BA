@@ -12,6 +12,8 @@
     <script src="../include/js/jquery.js"></script>
     <script src="../include/js/bootstrap.min.js"></script>
     <script src="../include/js/plotly.js"></script>
+    <script src="../include/js/FileSaver.js"></script>
+    
 
 </head>
 
@@ -21,29 +23,35 @@
 </header>
 
 <div class="container">
+
 <div class="row">
-
 <div class=".col-md-12" id="Hist"> </div>
-<br>
-	<div class=".col-md-12" style = "background-color:#cfcfe1;">
 
-		<input class= "floates" type="file" id="input" >  
-		
-		
-		<img class= "floates2 click" src="../include/img/save_ico.png" title="Guardar Imagen" onclick="rotatecw()" />
+<br>
+<div class=".col-md-12" style = "background-color:#cfcfe1;">
+<input class= "floates" type="file" id="input" />
+</div>
+</div>
+
+<br>
+<div class="row">
+	<div class=".col-md-12" style = "background-color:#cfcfe1; padding-top: 10px;">
+
+		<img class= "floates click" src="../include/img/trash_ico.png" title="Resetear Imagen" onclick="reset();" />
+
+
+		<img class= "floates2 click" src="../include/img/save_ico.png" title="Guardar Imagen" onclick="saveImg();" />
 		<div class="floates2" id="separate"> </div>
 		<img class= "floates2 click" src="../include/img/zoomOut_ico.png" title="Desamplia la vista de la imagen" onclick="zoomNN(2)" />
 		<div class="floates2" id="separate"> </div>
 		<img class= "floates2 click" src="../include/img/zoomIn_ico.png" title=" Amplia la vista de la imagen" onclick="zoomNN(1)" />
 		<div class="floates2" id="separate"> </div>
 		<img class= "floates2 click" src="../include/img/scale_ico.png" title="Cambia el tamaño de la imagen " onclick="if($('#bilinear:checked').val()=='billie'){scaleB();}else{ scaleNN();}" />
-		<input class="floates2" id= "Sheight" type="text" placeholder="Alto" style="width: 60px;" title="Modifica este número para cambiar el Alto de la imagen, recuerda hacer click en el botón"></input>
-		<input class="floates2" id= "Swidth" type="text" placeholder="Ancho" style="width: 60px;" title="Modifica este número para cambiar el Ancho de la imagen, recuerda hacer click en el botón"></input>
+		<input class="floates2" id= "Sheight" type="text" placeholder="Alto" style="width: 60px;" title="Modifica este número para cambiar el Alto de la imagen, recuerda hacer click en el botón"/>
+		<input class="floates2" id= "Swidth" type="text" placeholder="Ancho" style="width: 60px;" title="Modifica este número para cambiar el Ancho de la imagen, recuerda hacer click en el botón"/>
 		<div class="floates2" id="separate"> </div>
-		<img class= "floates2 click" src="../include/img/rotateCCW_ico.png" title="Rotar Counter Clock Wise" onclick="rotatecw();mirrorh();mirrorv();"/>
-		<div class="floates2" id="separate"> </div>
-		<img class= "floates2 click" src="../include/img/rotateCW_ico.png" title="Rotar Clock Wise " onclick="rotatecw()" />
-		<input class="floates2" id="angle" type="text" placeholder="ángulos a rotar" style="width: 100px;" title="Introduce el ángulo y presiona alguno de los botones de rotación (default=90°)"></input>
+		<img class= "floates2 click" src="../include/img/rotate_ico.png" title="Rotar" onclick=" rotateNN();" />
+		<input class="floates2" id="angle" type="text" placeholder="ángulos a rotar" style="width: 100px;" title="Introduce el ángulo a rotar, positivo para ClockWise y negativo para CounterClockWise"/>
 		<div class="floates2" id="separate"> </div>
 		<img class= "floates2 click" src="../include/img/mirrorH_ico.png" title="Espejo Horizontal" onclick="mirrorh();" />
 		<div class="floates2" id="separate"> </div>
@@ -51,13 +59,25 @@
 		<div class="floates2" id="separate"> </div>
 		<img class= "floates2 click" src="../include/img/invert_ico.png" title="Invierte los Colores" onclick="negative();" />
 		<div class="floates2" id="separate"> </div>
+		<img class= "floates2 click" src="../include/img/lighton_ico.png" title="Cambiar Brillo" onclick="brightness();" />
+		<input class="floates2" id= "light" type="text" placeholder="Luz" style="width: 60px;" title="Introduce un valor entre -255 y 255 y pulsa el botón para cambiar la iluminación"/>
+		<div class="floates2" id="separate"> </div>
+		<img class= "floates2 click" src="../include/img/contrast_ico.png" title="Contrastar" onclick="contrast();" />
+		<input class="floates2" id= "contrast" type="text" placeholder="Contraste" style="width: 60px;" title="Introduce el número y pulsa el botón para contrastar"/>
+		<div class="floates2" id="separate"> </div>
+		<img class= "floates2 click" src="../include/img/umbral_ico.png" title="Umbralizar (cero para resetear) " onclick="umbral();" />
+		<input class="floates2" id= "umax" type="text" placeholder="Umbral" style="width: 60px;" title="Introduce el número y pulsa el botón para umbralizar, coloca cero para quitar la umbralización"/>
+		<div class="floates2" id="separate"> </div>
+		<img class= "floates2 click" src="../include/img/equa_ico.png" title="Equalizar" onclick="equal();" />
+		<div class="floates2" id="separate"> </div>
 		<p class="floates2" >  </p>
-		<input class="floates2" type="checkbox" id="bilinear" value="billie" title="Marca esta opción para aplicar interpolación Bilinear, por defecto estará el Vecino Más Cercano" > <p class="floates2" style="color:white;" title="Marca esta opción para aplicar interpolación Bilinear, por defecto estará el Vecino Más Cercano"> Bilinear</p> <br>
+		<input class="floates2" type="checkbox" id="bilinear" value="billie" title="Marca esta opción para aplicar interpolación Bilinear, por defecto estará el Vecino Más Cercano" /> <p class="floates2" style="color:white;" title="Marca esta opción para aplicar interpolación Bilinear, por defecto estará el Vecino Más Cercano"> Bilinear</p> 
 		
 
 
-		<br style="clear:both;">
+		<p style="clear:both;">
 	</div>
+
 	<div class=".col-md-12" >
 		<table class="table table-bordered">
 			<thead>
