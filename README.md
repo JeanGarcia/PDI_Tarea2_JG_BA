@@ -1,13 +1,13 @@
 # Tarea 2 PDI
 
 # Autores
-Creado por Jean García y Brayhan Villalba
+Creado por Jean García C.I 23868370 y Brayhan Villalba C.I 24811560
 
 # Introducción
 
 La aplicación presenta una interfaz intuitiva basada en metáforas, en caso de tener dudas posar el cursor por encima para ver el texto de ayuda.
 
-# Instalacion
+# Instalación
 Descargue la carpeta, navegue hasta src/index.html y abra dicho archivo en su explorador de preferencia (se recomienda firefox) para correr la aplicación.
 
 # Recomendaciones
